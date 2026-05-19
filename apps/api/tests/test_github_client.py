@@ -80,3 +80,16 @@ def test_rate_limit_remaining_returns_int() -> None:
     remaining = rate_limit_remaining()
     assert isinstance(remaining, int)
     assert remaining >= 0
+
+
+def test_get_recent_commits_returns_dicts() -> None:
+    from apps.api.tools.github_client import get_recent_commits
+
+    commits = get_recent_commits(STABLE_REPO , limit = 5)
+    assert len(commits) > 0
+    assert len(commits) <= 5
+    first = commits[0]
+    assert "sha" in first
+    assert "message_first_line" in first
+    assert "authored_at" in first
+    assert isinstance(first["additions"], int)
