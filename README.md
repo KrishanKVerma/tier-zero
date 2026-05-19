@@ -130,8 +130,8 @@ python -m apps.api.main --username some-github-user
 
 - [x] Architecture defined
 - [x] Repo scaffold
-- [ ] GitHub data fetching
-- [ ] Forensics Agent
+- [x] GitHub data fetching
+- [x] Forensics Agent
 - [ ] Depth Agent
 - [ ] Claims Agent
 - [ ] Senior Reviewer + Critic
