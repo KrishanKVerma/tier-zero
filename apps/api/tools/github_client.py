@@ -17,13 +17,22 @@ from github.Repository import Repository
 
 load_dotenv()
 
-_TOKEN = os.getenv("GITHUB_TOKEN")
-if not _TOKEN:
-    raise RuntimeError(
-        "GITHUB_TOKEN not set. Add it to .env (see .env.example)."
-    )
 
-_client = Github(auth=Auth.Token(_TOKEN), per_page=100)
+_client_instance: Github | None = None
+
+
+def _get_client() -> Github:
+    """Lazy client init — only fails when actually called, not on import."""
+    global _client_instance
+    if _client_instance is not None:
+        return _client_instance
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "GITHUB_TOKEN not set. Add it to .env (see .env.example)."
+        )
+    _client_instance = Github(auth=Auth.Token(token), per_page=100)
+    return _client_instance
 
 
 # ---------- Data shapes ----------
@@ -76,7 +85,7 @@ class RepoSnapshot:
 def get_profile(username: str) -> ProfileSnapshot:
     """Fetch a user's public profile."""
     try:
-        user: NamedUser = _client.get_user(username)
+        user: NamedUser = _get_client().get_user(username)
     except GithubException as exc:
         raise _wrap_error(exc, f"Failed to fetch profile for '{username}'") from exc
 
@@ -100,7 +109,7 @@ def get_profile(username: str) -> ProfileSnapshot:
 def get_repos(username: str, limit: int = 50) -> list[RepoSnapshot]:
     """Fetch up to `limit` public repos for a user, sorted by most recently pushed."""
     try:
-        user = _client.get_user(username)
+        user = _get_client().get_user(username)
         repos = user.get_repos(sort="pushed", direction="desc")
     except GithubException as exc:
         raise _wrap_error(exc, f"Failed to fetch repos for '{username}'") from exc
@@ -114,7 +123,7 @@ def get_repos(username: str, limit: int = 50) -> list[RepoSnapshot]:
 def get_repo_details(full_name: str) -> dict[str, Any]:
     """Fetch deeper details for a single repo: README text, file tree, commit count."""
     try:
-        repo = _client.get_repo(full_name)
+        repo = _get_client().get_repo(full_name)
     except GithubException as exc:
         raise _wrap_error(exc, f"Failed to fetch repo '{full_name}'") from exc
 
@@ -130,18 +139,18 @@ def get_repo_details(full_name: str) -> dict[str, Any]:
     }
 
 
-def get_recent_commits(full_name: str , limit: int = 30) -> list[dict[str , Any]]:
+def get_recent_commits(full_name: str, limit: int = 30) -> list[dict[str, Any]]:
     """Fetch the most recent commits on a repo's default branch.
-    
-    Returns a slim shape suitable for pattern analysis - no diffs, no file lists.
+
+    Returns a slim shape suitable for pattern analysis — no diffs, no file lists.
     """
-    try: 
-        repo = _client.get_repo(full_name)
+    try:
+        repo = _get_client().get_repo(full_name)
         commits = repo.get_commits()
     except GithubException as exc:
-        raise _wrap_error(exc , f"Failed to fetch commits for '{full_name}'") from exc
+        raise _wrap_error(exc, f"Failed to fetch commits for '{full_name}'") from exc
 
-    out: list[dict[str , Any]] = []
+    out: list[dict[str, Any]] = []
     for commit in commits[:limit]:
         message = commit.commit.message or ""
         out.append(
@@ -156,15 +165,16 @@ def get_recent_commits(full_name: str , limit: int = 30) -> list[dict[str , Any]
                 "files_changed": commit.files.totalCount if commit.files else 0,
             }
         )
-    return out            
+    return out
 
 
 def rate_limit_remaining() -> int:
     """How many GitHub API calls we have left this hour."""
-    rl = _client.get_rate_limit()
-    # PyGithub ≥2.x exposes .resources.core; older versions exposed .core directly.
+    rl = _get_client().get_rate_limit()
+    # PyGithub >=2.x exposes .resources.core; older versions exposed .core directly.
     core = getattr(rl, "core", None) or rl.resources.core
     return core.remaining
+
 
 # ---------- Internals ----------
 
@@ -199,7 +209,7 @@ def _safe_readme(repo: Repository) -> str | None:
 def _shallow_tree(repo: Repository, max_entries: int = 200) -> list[str]:
     """Return top-level + one-level-deep file paths for quick repo shape sensing."""
     try:
-        root = repo.get_contents("")
+        root = _get_client().get_repo(repo.full_name).get_contents("")
     except GithubException:
         return []
 

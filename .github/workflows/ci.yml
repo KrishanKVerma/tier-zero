@@ -27,4 +27,6 @@ jobs:
         run: ruff check .
 
       - name: Run tests
+        env:
+          SKIP_LIVE_TESTS: "1"
         run: pytest apps/api/tests -v

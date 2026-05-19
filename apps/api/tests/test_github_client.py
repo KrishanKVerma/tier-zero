@@ -5,7 +5,7 @@ GITHUB_TOKEN to be set. Marked as `live` so CI can opt out if needed.
 """
 
 from __future__ import annotations
-
+import os
 import pytest
 
 from apps.api.tools.github_client import (
@@ -15,6 +15,11 @@ from apps.api.tools.github_client import (
     get_repos,
     get_repo_details,
     rate_limit_remaining,
+)
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("GITHUB_TOKEN") or os.getenv("SKIP_LIVE_TESTS") == "1",
+    reason="Live GitHub test — needs GITHUB_TOKEN, skipped via SKIP_LIVE_TESTS=1",
 )
 
 # A stable, well-known GitHub account used as a fixture. Torvalds will not
