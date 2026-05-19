@@ -1,0 +1,48 @@
+[project]
+name = "tier-zero"
+version = "0.1.0"
+description = "Tier-zero engineering review for any GitHub profile"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Krishan Kumar Verma" }]
+
+dependencies = [
+    "langchain>=0.3.0",
+    "langgraph>=0.2.0",
+    "langchain-anthropic>=0.2.0",
+    "langchain-openai>=0.2.0",
+    "PyGithub>=2.4.0",
+    "tree-sitter>=0.23.0",
+    "tree-sitter-languages>=1.10.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "celery>=5.4.0",
+    "redis>=5.2.0",
+    "pydantic>=2.9.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["apps*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

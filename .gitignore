@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+venv/
+env/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.key
+secrets/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+
+# AI/ML
+*.ckpt
+*.pt
+*.bin
+*.safetensors
+*.h5
+datasets/
+models/
+checkpoints/
+wandb/
+mlruns/
+logs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build
+dist/
+build/
+
+# Local data
+.cache/
+data/
+reports/
