@@ -130,6 +130,35 @@ def get_repo_details(full_name: str) -> dict[str, Any]:
     }
 
 
+def get_recent_commits(full_name: str , limit: int = 30) -> list[dict[str , Any]]:
+    """Fetch the most recent commits on a repo's default branch.
+    
+    Returns a slim shape suitable for pattern analysis - no diffs, no file lists.
+    """
+    try: 
+        repo = _client.get_repo(full_name)
+        commits = repo.get_commits()
+    except GithubException as exc:
+        raise _wrap_error(exc , f"Failed to fetch commits for '{full_name}'") from exc
+
+    out: list[dict[str , Any]] = []
+    for commit in commits[:limit]:
+        message = commit.commit.message or ""
+        out.append(
+            {
+                "sha": commit.sha[:7],
+                "message_first_line": message.split("\n", 1)[0][:200],
+                "message_length": len(message),
+                "author": commit.commit.author.name if commit.commit.author else None,
+                "authored_at": _iso(commit.commit.author.date) if commit.commit.author else "",
+                "additions": commit.stats.additions if commit.stats else 0,
+                "deletions": commit.stats.deletions if commit.stats else 0,
+                "files_changed": commit.files.totalCount if commit.files else 0,
+            }
+        )
+    return out            
+
+
 def rate_limit_remaining() -> int:
     """How many GitHub API calls we have left this hour."""
     rl = _client.get_rate_limit()
