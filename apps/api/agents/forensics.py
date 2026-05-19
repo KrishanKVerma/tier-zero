@@ -23,6 +23,8 @@ from apps.api.tools.github_client import (
     get_repos,
 )
 
+load_dotenv()
+
 class TutorialCluster(BaseModel):
     repo_name: str = Field(description= "Full name of the suspect repo.")
     reason: str = Field(description= "Specific reason this looks like a tutorial follow.")
