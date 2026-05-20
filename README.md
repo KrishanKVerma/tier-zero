@@ -134,7 +134,7 @@ python -m apps.api.main --username some-github-user
 - [x] Forensics Agent
 - [x] Depth Agent
 - [x] Claims Agent
-- [ ] Senior Reviewer + Critic
+- [x] Senior Reviewer + Critic
 - [ ] LangGraph orchestration
 - [ ] Eval set + benchmarks
 - [ ] FastAPI backend
