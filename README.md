@@ -133,7 +133,7 @@ python -m apps.api.main --username some-github-user
 - [x] GitHub data fetching
 - [x] Forensics Agent
 - [x] Depth Agent
-- [ ] Claims Agent
+- [x] Claims Agent
 - [ ] Senior Reviewer + Critic
 - [ ] LangGraph orchestration
 - [ ] Eval set + benchmarks
