@@ -132,7 +132,7 @@ python -m apps.api.main --username some-github-user
 - [x] Repo scaffold
 - [x] GitHub data fetching
 - [x] Forensics Agent
-- [ ] Depth Agent
+- [x] Depth Agent
 - [ ] Claims Agent
 - [ ] Senior Reviewer + Critic
 - [ ] LangGraph orchestration
