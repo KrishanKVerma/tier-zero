@@ -53,11 +53,14 @@ export interface QueuedResponse {
   status_url: string;
 }
 
-export async function createReport(username: string): Promise<QueuedResponse> {
+export async function createReport(
+  username: string,
+  githubToken: string,
+): Promise<QueuedResponse> {
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, mode: "profile" }),
+    body: JSON.stringify({ username, mode: "profile", github_token: githubToken }),
   });
   if (!res.ok) {
     const text = await res.text();

@@ -40,7 +40,7 @@ def make_llm(temperature: float = 0.1) -> BaseChatModel:
         )
         if openrouter_key:
             fallback = ChatOpenAI(
-                model="meta-llama/llama-3.3-70b-instruct",
+                model="google/gemini-2.0-flash-001",
                 temperature=temperature,
                 api_key=openrouter_key,
                 base_url="https://openrouter.ai/api/v1",

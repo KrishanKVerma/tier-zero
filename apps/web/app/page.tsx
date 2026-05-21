@@ -1,32 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, AtSign, Loader2 } from "lucide-react";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { ArrowRight, AtSign, Loader2, LogOut } from "lucide-react";
 
 import { createReport } from "@/lib/api";
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [username, setUsername] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const clean = username
-      .trim()
-      .replace(/^@/, "")
-      .replace(/^https?:\/\/github\.com\//, "");
-    if (!clean) {
-      setError("Enter a GitHub username.");
+  const githubUsername = (session?.user as { login?: string } | undefined)?.login;
+
+  async function handleAudit() {
+    if (!githubUsername) {
+      setError("Sign in with GitHub first.");
+      return;
+    }
+    const accessToken = (session as { accessToken?: string } | null)?.accessToken;
+    if (!accessToken) {
+      setError("No GitHub access token. Sign out and sign in again.");
       return;
     }
     setError(null);
     setSubmitting(true);
     try {
-      const res = await createReport(clean);
-      router.push(`/report/${res.report_id}?u=${encodeURIComponent(clean)}`);
+      const res = await createReport(githubUsername, accessToken);
+      router.push(`/report/${res.report_id}?u=${encodeURIComponent(githubUsername)}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to start report.";
       setError(message);
@@ -60,48 +63,33 @@ export default function HomePage() {
           <span className="gradient-text">every GitHub profile deserves.</span>
         </h1>
 
-        <form onSubmit={handleSubmit} className="mt-14 w-full max-w-xl">
-          <div className="focus-glow group relative flex items-center rounded-xl border border-zinc-800 bg-zinc-900/40 backdrop-blur transition">
-            <AtSign className="pointer-events-none absolute left-4 h-4 w-4 text-zinc-500 transition group-focus-within:text-emerald-400" />
-            <input
-              type="text"
-              placeholder="GitHub username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={submitting}
-              autoFocus
-              spellCheck={false}
-              autoCapitalize="off"
-              className="h-14 flex-1 bg-transparent pl-11 pr-32 font-mono text-base text-zinc-100 placeholder:font-sans placeholder:text-zinc-500 outline-none disabled:opacity-60"
-            />
-            <button
-              type="submit"
-              disabled={submitting}
-              className="absolute right-2 inline-flex h-10 items-center gap-1.5 rounded-lg border border-emerald-400/20 bg-gradient-to-b from-emerald-400/10 to-emerald-500/5 px-4 text-sm font-medium text-emerald-300 transition hover:border-emerald-400/50 hover:from-emerald-400/20 hover:to-emerald-500/10 hover:text-emerald-200 disabled:opacity-60"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Running
-                </>
-              ) : (
-                <>
-                  Audit
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </>
-              )}
-            </button>
-          </div>
-          {error ? (
-            <p className="mt-3 text-sm text-rose-400">{error}</p>
-          ) : (
-            <p className="mt-3 text-center text-xs tracking-wide text-zinc-500">
-              Public profiles only &middot; 60&ndash;180 seconds
-            </p>
-          )}
-        </form>
+        <p className="mt-6 max-w-md text-center text-sm text-zinc-400">
+          Audit your own GitHub before recruiters do.
+        </p>
 
-        <div className="mt-24 flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-600">
+        <div className="mt-12 w-full max-w-md">
+          {status === "loading" ? (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 py-4 text-sm text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading session
+            </div>
+          ) : session ? (
+            <SignedInPanel
+              username={githubUsername}
+              submitting={submitting}
+              onAudit={handleAudit}
+            />
+          ) : (
+            <SignedOutPanel onSignIn={() => signIn("github")} />
+          )}
+
+          {error && <p className="mt-3 text-center text-sm text-rose-400">{error}</p>}
+
+          <p className="mt-4 text-center text-xs text-zinc-500">
+            Self-audit only. We never audit other people&apos;s profiles.
+          </p>
+        </div>
+
+        <div className="mt-20 flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-600">
           <span className="h-px w-12 bg-zinc-800" />
           Open source
           <span className="h-px w-12 bg-zinc-800" />
@@ -117,5 +105,65 @@ export default function HomePage() {
         </a>
       </div>
     </main>
+  );
+}
+
+function SignedOutPanel({ onSignIn }: { onSignIn: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSignIn}
+      className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-gradient-to-b from-emerald-400/10 to-emerald-500/5 py-4 text-sm font-medium text-emerald-200 transition hover:border-emerald-400/60 hover:from-emerald-400/20 hover:to-emerald-500/10"
+    >
+      <AtSign className="h-4 w-4" />
+      Sign in with GitHub to audit your profile
+      <ArrowRight className="h-4 w-4" />
+    </button>
+  );
+}
+
+function SignedInPanel({
+  username,
+  submitting,
+  onAudit,
+}: {
+  username: string | undefined;
+  submitting: boolean;
+  onAudit: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 backdrop-blur">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-zinc-300">
+          <AtSign className="h-3.5 w-3.5 text-emerald-400" />
+          <span className="font-mono">{username ?? "(no username)"}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => signOut()}
+          className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.18em] text-zinc-500 transition hover:text-zinc-300"
+        >
+          <LogOut className="h-3 w-3" /> Sign out
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onAudit}
+        disabled={submitting || !username}
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-400/30 bg-gradient-to-b from-emerald-400/10 to-emerald-500/5 py-3 text-sm font-medium text-emerald-200 transition hover:border-emerald-400/60 hover:from-emerald-400/20 hover:to-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Starting audit
+          </>
+        ) : (
+          <>
+            Audit my GitHub profile
+            <ArrowRight className="h-4 w-4" />
+          </>
+        )}
+      </button>
+    </div>
   );
 }
