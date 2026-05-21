@@ -138,8 +138,9 @@ python -m apps.api.main --username some-github-user
 - [x] LangGraph orchestration
 - [x] Eval set + benchmarks
 - [x] FastAPI backend
-- [ ] Next.js frontend
-- [ ] Observability + caching
+- [x] Next.js frontend
+- [x] Safety + legal hardening
+- [ ] Deploy to internet
 - [ ] Public launch
 
 ---
