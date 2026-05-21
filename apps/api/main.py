@@ -66,7 +66,9 @@ def _verify_github_user(token: str) -> str:
             timeout=10.0,
         )
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=503, detail=f"GitHub verification failed: {exc}") from exc
+        # Don't include exc details in detail — could leak token in URL fragments.
+        logger.error(f"GitHub verification failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="GitHub verification failed.") from exc
 
     if response.status_code != 200:
         raise HTTPException(

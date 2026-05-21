@@ -1,0 +1,11 @@
+/* TEAM */
+Author: Krishan Kumar Verma
+Site: https://github.com/KrishanKVerma
+Contact: krishnaverma60606@gmail.com
+Location: India
+
+/* SITE */
+Project: tier-zero
+Source: https://github.com/KrishanKVerma/tier-zero
+License: MIT
+Stack: FastAPI, LangGraph, Next.js, GitHub OAuth, Groq, OpenRouter
