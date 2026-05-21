@@ -58,6 +58,14 @@ export default function ReportPage({ params, searchParams }: PageProps) {
           New audit
         </Link>
 
+        <div className="mt-10 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-200/80">
+          <span className="font-medium uppercase tracking-[0.18em] text-amber-300/90">Notice</span>
+          {" "}&middot;{" "}
+          This is an AI-generated opinion, not a factual statement. Outputs may be wrong.
+          Do not use as the sole basis for hiring decisions.{" "}
+          <a href="/terms" className="underline-offset-4 hover:underline">Terms</a>.
+        </div>
+
         <div className="mt-12">
           <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
             Audit target
