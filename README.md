@@ -136,7 +136,7 @@ python -m apps.api.main --username some-github-user
 - [x] Claims Agent
 - [x] Senior Reviewer + Critic
 - [x] LangGraph orchestration
-- [ ] Eval set + benchmarks
+- [x] Eval set + benchmarks
 - [ ] FastAPI backend
 - [ ] Next.js frontend
 - [ ] Observability + caching
