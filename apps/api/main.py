@@ -10,23 +10,76 @@ For v1 we use in-memory storage. Production (Day 19/20) swaps to Redis.
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 import traceback
 import uuid
+from pathlib import Path
 from typing import Any, Literal
 
+import httpx
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException , Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from apps.api.graph import run as run_tier_zero
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+import os
+
 load_dotenv()
+limiter = Limiter(key_func=get_remote_address)
 
 logger = logging.getLogger("tier_zero")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+
+_BLOCKLIST_PATH = Path(__file__).parent / "blocklist.json"
+
+
+def _load_blocklist() -> set[str]:
+    """Load the blocklist fresh each call so admin changes don't need a restart."""
+    try:
+        data = json.loads(_BLOCKLIST_PATH.read_text())
+        return {u.lower() for u in data.get("usernames", [])}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return set()
+
+
+def _verify_github_user(token: str) -> str:
+    """Call GitHub's /user endpoint with the user's OAuth token.
+
+    Returns the authenticated GitHub username.
+    Raises HTTPException on any auth failure.
+    """
+    try:
+        response = httpx.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+            },
+            timeout=10.0,
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=503, detail=f"GitHub verification failed: {exc}") from exc
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired GitHub token.",
+        )
+
+    data = response.json()
+    login = data.get("login")
+    if not login:
+        raise HTTPException(status_code=500, detail="GitHub returned no username.")
+    return login
+
 
 app = FastAPI(
     title="tier-zero",
@@ -34,13 +87,24 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS — frontend (Day 17-18) will live on a different origin.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS: allow only known frontend origins.
+_allowed_origins = [
+    "http://localhost:3000",
+]
+# Production frontend (set this env var when you deploy to Vercel).
+_prod_origin = os.getenv("FRONTEND_ORIGIN")
+if _prod_origin:
+    _allowed_origins.append(_prod_origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # v1 dev: open. Day 20: lock to your prod frontend URL.
+    allow_origins=_allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -55,7 +119,8 @@ _reports: dict[str, dict[str, Any]] = {}
 
 class ReportRequest(BaseModel):
     username: str = Field(min_length=1, max_length=64)
-    mode: Literal["profile"] = "profile"  # "repo" mode comes later
+    mode: Literal["profile"] = "profile"
+    github_token: str = Field(min_length=1, description="GitHub OAuth access token for the requesting user.")
 
 
 class ReportQueued(BaseModel):
@@ -116,8 +181,26 @@ def _worker(report_id: str, username: str) -> None:
 
 
 @app.post("/api/report", response_model=ReportQueued, status_code=202)
-def create_report(req: ReportRequest, background: BackgroundTasks) -> ReportQueued:
+@limiter.limit("5/hour;50/day")
+def create_report(request: Request, req: ReportRequest, background: BackgroundTasks) -> ReportQueued:
     """Queue a tier-zero report. Returns immediately with a polling URL."""
+    if req.username.lower() in _load_blocklist():
+        raise HTTPException(
+            status_code=403,
+            detail=f"User '{req.username}' has requested exclusion from tier-zero analysis.",
+        )
+
+    # Verify the OAuth token and enforce self-audit.
+    authenticated_user = _verify_github_user(req.github_token)
+    if authenticated_user.lower() != req.username.lower():
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Self-audit only: you can only audit your own profile "
+                f"(@{authenticated_user}). Requested @{req.username}."
+            ),
+        )
+
     report_id = f"rpt_{uuid.uuid4().hex[:10]}"
     _reports[report_id] = {
         "report_id": report_id,

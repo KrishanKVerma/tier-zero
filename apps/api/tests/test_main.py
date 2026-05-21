@@ -45,20 +45,26 @@ def test_root_returns_metadata(client: TestClient) -> None:
 
 
 def test_create_report_returns_202_and_id(client: TestClient) -> None:
-    with patch("apps.api.main._worker") as mock_worker:
-        r = client.post("/api/report", json={"username": "torvalds"})
+    with patch("apps.api.main._worker") as mock_worker, \
+         patch("apps.api.main._verify_github_user", return_value="torvalds"):
+        r = client.post(
+            "/api/report",
+            json={"username": "torvalds", "github_token": "fake-test-token"},
+        )
     assert r.status_code == 202
     body = r.json()
     assert body["report_id"].startswith("rpt_")
     assert body["status"] == "queued"
     assert body["status_url"] == f"/api/report/{body['report_id']}"
-    # Worker was scheduled (called once with our args)
     mock_worker.assert_called_once()
 
 
 def test_create_report_rejects_empty_username(client: TestClient) -> None:
-    r = client.post("/api/report", json={"username": ""})
-    assert r.status_code == 422  # Pydantic validation
+    r = client.post(
+        "/api/report",
+        json={"username": "", "github_token": "fake-test-token"},
+    )
+    assert r.status_code == 422
 
 
 def test_get_report_returns_404_for_unknown_id(client: TestClient) -> None:
@@ -67,8 +73,12 @@ def test_get_report_returns_404_for_unknown_id(client: TestClient) -> None:
 
 
 def test_get_report_returns_queued_record_immediately(client: TestClient) -> None:
-    with patch("apps.api.main._worker"):  # Don't actually run the graph
-        post = client.post("/api/report", json={"username": "torvalds"})
+    with patch("apps.api.main._worker"), \
+         patch("apps.api.main._verify_github_user", return_value="torvalds"):
+        post = client.post(
+            "/api/report",
+            json={"username": "torvalds", "github_token": "fake-test-token"},
+        )
     report_id = post.json()["report_id"]
 
     get = client.get(f"/api/report/{report_id}")
@@ -82,7 +92,6 @@ def test_get_report_returns_queued_record_immediately(client: TestClient) -> Non
 def test_worker_updates_status_to_complete_on_success(client: TestClient) -> None:
     from apps.api.main import _worker
 
-    # Pre-populate the store like the endpoint would
     rid = "rpt_test123"
     _reports[rid] = {
         "report_id": rid,
@@ -122,9 +131,6 @@ def test_worker_records_error_on_exception() -> None:
 
     assert _reports[rid]["status"] == "error"
     assert "boom" in _reports[rid]["error"]
-
-
-# ---------- Fake state factory ----------
 
 
 def _fake_graph_state() -> dict:
@@ -177,5 +183,4 @@ def _fake_graph_state() -> dict:
     }
 
 
-# silence unused-import warning when running tests selectively
 _ = time
