@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, Literal
 
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
 from pydantic import BaseModel
 
 from apps.api.agents.claims import ClaimsReport
@@ -44,11 +42,10 @@ class SeniorVerdict(BaseModel):
     fixes: list[FixAction]
 
 
-def _make_llm() -> ChatGroq:
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY not set. Add it to .env.")
-    return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, api_key=api_key)
+def _make_llm(temperature: float = 0.1):
+    from apps.api.tools.llm import make_llm
+    return make_llm(temperature=temperature)
+
 
 
 _SYSTEM_PROMPT = """You are a staff engineer writing a verdict on a GitHub profile.
