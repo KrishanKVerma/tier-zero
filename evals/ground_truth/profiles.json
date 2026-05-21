@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "labeled_at": "2026-05-21",
+  "labeler_note": "Initial v1 dataset. 4 profiles spanning tier-zero to weak. red-flag tier deferred to v2 to avoid publicly mislabeling real engineers.",
+  "profiles": [
+    {
+      "username": "karpathy",
+      "expected_tier": "tier-zero",
+      "expected_score_range": [90, 100],
+      "expected_originality": "original",
+      "expected_strengths_keywords": ["nanoGPT", "minGPT", "llm.c", "education", "from-scratch"],
+      "expected_concerns_keywords": [],
+      "notes": "Staff-level: builds production-grade ML systems from scratch, prolific educator, multiple high-impact OSS repos."
+    },
+    {
+      "username": "simonw",
+      "expected_tier": "strong",
+      "expected_score_range": [80, 92],
+      "expected_originality": "original",
+      "expected_strengths_keywords": ["datasette", "LLM CLI", "blog", "sustained output", "python"],
+      "expected_concerns_keywords": [],
+      "notes": "Senior signal: maintains popular OSS projects (datasette, llm), writes extensively, shows depth in Python tooling."
+    },
+    {
+      "username": "jph00",
+      "expected_tier": "strong",
+      "expected_score_range": [78, 90],
+      "expected_originality": "original",
+      "expected_strengths_keywords": ["fastai", "education", "deep learning", "courses"],
+      "expected_concerns_keywords": [],
+      "notes": "Boundary case between strong and tier-zero. Co-founder of fast.ai, deep impact in education. Less raw output recently."
+    },
+    {
+      "username": "KrishanKVerma",
+      "expected_tier": "weak",
+      "expected_score_range": [40, 60],
+      "expected_originality": "original",
+      "expected_strengths_keywords": ["tier-zero", "multi-agent", "active development"],
+      "expected_concerns_keywords": ["thin", "few repos", "early stage", "unsupported claims"],
+      "notes": "Honest self-assessment as of 2026-05-21. Currently building tier-zero. Two repos, both small. Bio mentions autonomous systems and LLM pipelines that don't yet exist in code. Expected to climb tiers as the project ships and is dogfooded."
+    }
+  ]
+}

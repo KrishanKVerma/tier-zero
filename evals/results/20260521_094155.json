@@ -1,0 +1,90 @@
+{
+  "timestamp": "20260521_094155",
+  "ground_truth_version": "1.0",
+  "summary": {
+    "status": "complete",
+    "total_profiles": 4,
+    "successful": 2,
+    "errors": 2,
+    "metrics": {
+      "tier_exact_accuracy": 0.5,
+      "tier_within_one_accuracy": 1.0,
+      "score_in_range_accuracy": 1.0,
+      "avg_strength_keyword_recall": 0.2,
+      "avg_latency_seconds": 132.82,
+      "p95_latency_seconds": 186.44
+    }
+  },
+  "results": [
+    {
+      "username": "karpathy",
+      "status": "ok",
+      "elapsed_seconds": 112.96,
+      "predicted": {
+        "tier": "strong",
+        "score": 92,
+        "one_line_verdict": "This developer has a strong focus on depth, with a significant amount of high-quality code in a few key areas, and their bio claims are well-aligned with the code evidence."
+      },
+      "expected": {
+        "tier": "tier-zero",
+        "score_range": [
+          90,
+          100
+        ]
+      },
+      "scoring": {
+        "tier_distance": 1,
+        "tier_exact_match": false,
+        "tier_within_one": true,
+        "score_in_range": true,
+        "strength_keyword_recall": 0.0,
+        "concern_keyword_recall": 1.0
+      },
+      "forensics_originality_score": 95,
+      "critic_rounds": 1,
+      "revisions": 0
+    },
+    {
+      "username": "simonw",
+      "status": "ok",
+      "elapsed_seconds": 152.68,
+      "predicted": {
+        "tier": "strong",
+        "score": 92,
+        "one_line_verdict": "This developer has a strong focus on depth, with a large number of high-quality, original repositories demonstrating expertise in various programming languages and technologies, and their bio claims are partially supported by the provided repository evidence."
+      },
+      "expected": {
+        "tier": "strong",
+        "score_range": [
+          80,
+          92
+        ]
+      },
+      "scoring": {
+        "tier_distance": 0,
+        "tier_exact_match": true,
+        "tier_within_one": true,
+        "score_in_range": true,
+        "strength_keyword_recall": 0.4,
+        "concern_keyword_recall": 1.0
+      },
+      "forensics_originality_score": 95,
+      "critic_rounds": 3,
+      "revisions": 2
+    },
+    {
+      "username": "jph00",
+      "status": "error",
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kq34e23wfa4b099jygzqsj9a` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 97480, Requested 3811. Please try again in 18m35.424s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\hp\\code\\tier-zero\\evals\\run_evals.py\", line 66, in evaluate_profile\n    state = run_tier_zero(username)\n  File \"C:\\Users\\hp\\code\\tier-zero\\apps\\api\\graph.py\", line 165, in run\n    final_state = graph.invoke({\"username\": username})\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\main.py\", line 3880, in invoke\n    for chunk in self.stream(\n                 ~~~~~~~~~~~^\n        input,\n        ^^^^^^\n    ...<11 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    ):\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\main.py\", line 2936, in stream\n    for _ in runner.tick(\n             ~~~~~~~~~~~^\n        [t for t in loop.tasks.values() if not t.writes],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<2 lines>...\n        schedule_task=loop.accept_push,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ):\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\_runner.py\", line 207, in tick\n    run_with_retry(\n    ~~~~~~~~~~~~~~^\n        t,\n        ^^\n    ...<10 lines>...\n        },\n        ^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\_retry.py\", line 585, in run_with_retry\n    return task.proc.invoke(task.input, config)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\_internal\\_runnable.py\", line 684, in invoke\n    input = context.run(step.invoke, input, config, **kwargs)\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\_internal\\_runnable.py\", line 426, in invoke\n    ret = self.func(*args, **kwargs)\n  File \"C:\\Users\\hp\\code\\tier-zero\\apps\\api\\graph.py\", line 74, in _fetch_evidence\n    \"depth\": depth_future.result(),\n             ~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\_base.py\", line 450, in result\n    return self.__get_result()\n           ~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\_base.py\", line 395, in __get_result\n    raise self._exception\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\thread.py\", line 86, in run\n    result = ctx.run(self.task)\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\thread.py\", line 73, in run\n    return fn(*args, **kwargs)\n  File \"C:\\Users\\hp\\code\\tier-zero\\apps\\api\\agents\\depth.py\", line 202, in run_depth\n    result = chain.invoke(\n        {\n    ...<4 lines>...\n        }\n    )\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\runnables\\base.py\", line 3335, in invoke\n    input_ = context.run(step.invoke, input_, config)\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\runnables\\base.py\", line 5881, in invoke\n    return self.bound.invoke(\n           ~~~~~~~~~~~~~~~~~^\n        input,\n        ^^^^^^\n        self._merge_configs(config),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        **{**self.kwargs, **kwargs},\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 474, in invoke\n    self.generate_prompt(\n    ~~~~~~~~~~~~~~~~~~~~^\n        [self._convert_input(input)],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<6 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    ).generations[0][0],\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 1823, in generate_prompt\n    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)\n           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 1630, in generate\n    self._generate_with_cache(\n    ~~~~~~~~~~~~~~~~~~~~~~~~~^\n        m,\n        ^^\n    ...<2 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 1970, in _generate_with_cache\n    result = self._generate(\n        messages, stop=stop, run_manager=run_manager, **kwargs\n    )\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_groq\\chat_models.py\", line 621, in _generate\n    response = self.client.create(messages=message_dicts, **params)\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\groq\\resources\\chat\\completions.py\", line 461, in create\n    return self._post(\n           ~~~~~~~~~~^\n        \"/openai/v1/chat/completions\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<45 lines>...\n        stream_cls=Stream[ChatCompletionChunk],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\groq\\_base_client.py\", line 1242, in post\n    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))\n                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\groq\\_base_client.py\", line 1044, in request\n    raise self._make_status_error_from_response(err.response) from None\ngroq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kq34e23wfa4b099jygzqsj9a` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 97480, Requested 3811. Please try again in 18m35.424s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}\nDuring task with name 'fetch_evidence' and id '229d571b-a8b1-1deb-b2b5-aa5e1618443b'\n",
+      "elapsed_seconds": 71.76
+    },
+    {
+      "username": "KrishanKVerma",
+      "status": "error",
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kq34e23wfa4b099jygzqsj9a` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 98102, Requested 2133. Please try again in 3m23.04s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+      "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\hp\\code\\tier-zero\\evals\\run_evals.py\", line 66, in evaluate_profile\n    state = run_tier_zero(username)\n  File \"C:\\Users\\hp\\code\\tier-zero\\apps\\api\\graph.py\", line 165, in run\n    final_state = graph.invoke({\"username\": username})\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\main.py\", line 3880, in invoke\n    for chunk in self.stream(\n                 ~~~~~~~~~~~^\n        input,\n        ^^^^^^\n    ...<11 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    ):\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\main.py\", line 2936, in stream\n    for _ in runner.tick(\n             ~~~~~~~~~~~^\n        [t for t in loop.tasks.values() if not t.writes],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<2 lines>...\n        schedule_task=loop.accept_push,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ):\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\_runner.py\", line 207, in tick\n    run_with_retry(\n    ~~~~~~~~~~~~~~^\n        t,\n        ^^\n    ...<10 lines>...\n        },\n        ^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\pregel\\_retry.py\", line 585, in run_with_retry\n    return task.proc.invoke(task.input, config)\n           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\_internal\\_runnable.py\", line 684, in invoke\n    input = context.run(step.invoke, input, config, **kwargs)\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langgraph\\_internal\\_runnable.py\", line 426, in invoke\n    ret = self.func(*args, **kwargs)\n  File \"C:\\Users\\hp\\code\\tier-zero\\apps\\api\\graph.py\", line 74, in _fetch_evidence\n    \"depth\": depth_future.result(),\n             ~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\_base.py\", line 443, in result\n    return self.__get_result()\n           ~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\_base.py\", line 395, in __get_result\n    raise self._exception\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\thread.py\", line 86, in run\n    result = ctx.run(self.task)\n  File \"C:\\Python314\\Lib\\concurrent\\futures\\thread.py\", line 73, in run\n    return fn(*args, **kwargs)\n  File \"C:\\Users\\hp\\code\\tier-zero\\apps\\api\\agents\\depth.py\", line 202, in run_depth\n    result = chain.invoke(\n        {\n    ...<4 lines>...\n        }\n    )\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\runnables\\base.py\", line 3335, in invoke\n    input_ = context.run(step.invoke, input_, config)\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\runnables\\base.py\", line 5881, in invoke\n    return self.bound.invoke(\n           ~~~~~~~~~~~~~~~~~^\n        input,\n        ^^^^^^\n        self._merge_configs(config),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        **{**self.kwargs, **kwargs},\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 474, in invoke\n    self.generate_prompt(\n    ~~~~~~~~~~~~~~~~~~~~^\n        [self._convert_input(input)],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<6 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    ).generations[0][0],\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 1823, in generate_prompt\n    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)\n           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 1630, in generate\n    self._generate_with_cache(\n    ~~~~~~~~~~~~~~~~~~~~~~~~~^\n        m,\n        ^^\n    ...<2 lines>...\n        **kwargs,\n        ^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_core\\language_models\\chat_models.py\", line 1970, in _generate_with_cache\n    result = self._generate(\n        messages, stop=stop, run_manager=run_manager, **kwargs\n    )\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\langchain_groq\\chat_models.py\", line 621, in _generate\n    response = self.client.create(messages=message_dicts, **params)\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\groq\\resources\\chat\\completions.py\", line 461, in create\n    return self._post(\n           ~~~~~~~~~~^\n        \"/openai/v1/chat/completions\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<45 lines>...\n        stream_cls=Stream[ChatCompletionChunk],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\groq\\_base_client.py\", line 1242, in post\n    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))\n                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\hp\\code\\tier-zero\\venv\\Lib\\site-packages\\groq\\_base_client.py\", line 1044, in request\n    raise self._make_status_error_from_response(err.response) from None\ngroq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01kq34e23wfa4b099jygzqsj9a` service tier `on_demand` on tokens per day (TPD): Limit 100000, Used 98102, Requested 2133. Please try again in 3m23.04s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}\nDuring task with name 'fetch_evidence' and id 'd1b203b4-4e25-4c5c-d334-fd79211a09cb'\n",
+      "elapsed_seconds": 23.26
+    }
+  ]
+}
