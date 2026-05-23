@@ -155,6 +155,22 @@ def build_graph() -> StateGraph:
 
 # ---------- Public entry point ----------
 
+def _langfuse_callbacks() -> list:
+    """Return a Langfuse callback handler if keys are set, else empty list.
+
+    Observability is optional — the pipeline runs fine without it.
+    """
+    import os
+
+    if not (os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY")):
+        return []
+    try:
+        from langfuse.langchain import CallbackHandler
+
+        return [CallbackHandler()]
+    except Exception:  # noqa: BLE001 — observability must never break the pipeline
+        return []
+
 
 def run(username: str) -> dict:
     """Run the full tier-zero pipeline on a GitHub username.
@@ -162,5 +178,6 @@ def run(username: str) -> dict:
     Returns the final state dict containing all intermediate findings + verdict.
     """
     graph = build_graph()
-    final_state = graph.invoke({"username": username})
+    config = {"callbacks": _langfuse_callbacks(), "metadata": {"username": username}}
+    final_state = graph.invoke({"username": username}, config=config)
     return final_state
