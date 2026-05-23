@@ -42,7 +42,7 @@ class SeniorVerdict(BaseModel):
     fixes: list[FixAction]
 
 
-def _make_llm(temperature: float = 0.1):
+def _make_llm(temperature: float = 0.0):
     from apps.api.tools.llm import make_llm
     return make_llm(temperature=temperature)
 
