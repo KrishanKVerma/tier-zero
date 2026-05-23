@@ -8,13 +8,17 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Status](https://img.shields.io/badge/status-in%20development-orange)]()
+[![Status](https://img.shields.io/badge/status-live-brightgreen)](https://tier-zero.vercel.app)
 
-[How it works](#how-it-works) · [Run locally](#run-locally) · [Roadmap](#roadmap)
+**[→ Try it live](https://tier-zero.vercel.app)** · [How it works](#how-it-works) · [Run locally](#run-locally) · [Roadmap](#roadmap)
 
 </div>
 
 ---
+
+<div align="center">
+<img src="docs/assets/verdict.png" alt="tier-zero verdict example" width="800">
+</div>
 
 ## The problem
 
