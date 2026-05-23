@@ -100,13 +100,12 @@ See [architecture.md](architecture.md) for the full design.
 ## Tech stack
 
 - **Agent orchestration** — LangGraph
-- **LLMs** — Claude (primary), GPT-4o (fallback)
-- **Code analysis** — tree-sitter, Python AST
-- **GitHub data** — PyGithub + GraphQL API
-- **Backend** — FastAPI + Celery + Redis
+- **LLMs** — Llama 3.3 70B via Groq (primary), OpenRouter  (fallback)
+- **GitHub data** — PyGithub (REST API)
+- **Backend** — FastAPI (async background tasks, in-memory store)
 - **Frontend** — Next.js + Tailwind + shadcn/ui
 - **Observability** — Langfuse
-- **Eval** — custom ground-truth set of 20 profiles, scored against senior engineer labels
+- **Eval** — custom ground-truth set of 4 profiles, scored against senior engineer labels
 
 ---
 
@@ -119,13 +118,17 @@ cd tier-zero
 
 # Configure
 cp .env.example .env
-# Add ANTHROPIC_API_KEY or OPENAI_API_KEY
+# Add GROQ_API_KEY (and optionally OPENROUTER_API_KEY for fallback)
 
 # Install
 pip install -e .
 
 # Run
-python -m apps.api.main --username some-github-user
+# Run the API server
+uvicorn apps.api.main:app --reload --port 8000
+
+# Or run the pipeline directly on a username
+python -c "from apps.api.graph import run; print(run('some-github-user'))"
 ```
 
 ---
@@ -151,7 +154,7 @@ python -m apps.api.main --username some-github-user
 
 ## Eval philosophy
 
-Most AI tools never measure if they work. tier-zero ships with a 20-profile ground-truth set hand-labeled against senior engineer judgment. Every PR runs against the eval. Performance is tracked in [evals/results/](evals/results/).
+Most AI tools never measure if they work. tier-zero ships with a 4-profile ground-truth set hand-labeled against senior engineer judgment. Every PR runs against the eval. Performance is tracked in [evals/results/](evals/results/).
 
 ---
 
