@@ -14,9 +14,12 @@ from apps.api.main import _reports, app
 @pytest.fixture(autouse=True)
 def _clear_reports():
     """Wipe the in-memory store between tests so they don't leak state."""
+    from apps.api.main import _verdict_cache
     _reports.clear()
+    _verdict_cache.clear()
     yield
     _reports.clear()
+    _verdict_cache.clear()
 
 
 @pytest.fixture
@@ -131,6 +134,38 @@ def test_worker_records_error_on_exception() -> None:
 
     assert _reports[rid]["status"] == "error"
     assert "boom" in _reports[rid]["error"]
+
+def test_create_report_serves_cached_verdict(client: TestClient) -> None:
+    """A second audit of the same user returns the cached verdict without re-running."""
+    from apps.api.main import _verdict_cache
+    import time as _time
+
+    _verdict_cache.clear()
+    _verdict_cache["torvalds"] = {
+        "completed_at": _time.time(),
+        "result": {"verdict": {"tier": "tier-zero", "score": 99}},
+    }
+
+    with patch("apps.api.main._worker") as mock_worker, \
+         patch("apps.api.main._verify_github_user", return_value="torvalds"):
+        r = client.post(
+            "/api/report",
+            json={"username": "torvalds", "github_token": "fake-test-token"},
+        )
+
+    assert r.status_code == 202
+    report_id = r.json()["report_id"]
+
+    # Cache hit means the worker was never scheduled.
+    mock_worker.assert_not_called()
+
+    # And the report is already complete with the cached result.
+    get = client.get(f"/api/report/{report_id}")
+    body = get.json()
+    assert body["status"] == "complete"
+    assert body["result"]["verdict"]["score"] == 99
+
+    _verdict_cache.clear()    
 
 
 def _fake_graph_state() -> dict:

@@ -114,6 +114,8 @@ app.add_middleware(
 
 # report_id -> ReportRecord
 _reports: dict[str, dict[str, Any]] = {}
+_verdict_cache: dict[str, dict[str, Any]] = {}
+CACHE_TTL_SECONDS = 24 * 60 * 60 
 
 
 # ---------- Request / response schemas ----------
@@ -170,6 +172,12 @@ def _worker(report_id: str, username: str) -> None:
             f"[{report_id}] complete in {_reports[report_id]['elapsed_seconds']}s, "
             f"tier={verdict.tier}, score={verdict.score}"
         )
+
+        _verdict_cache[username.lower()] = {
+            "completed_at": time.time(),
+            "result": _reports[report_id]["result"],
+        }
+
     except Exception as exc:  # noqa: BLE001
         _reports[report_id].update(
             status="error",
@@ -201,6 +209,26 @@ def create_report(request: Request, req: ReportRequest, background: BackgroundTa
                 f"Self-audit only: you can only audit your own profile "
                 f"(@{authenticated_user}). Requested @{req.username}."
             ),
+        )
+    
+    # Return cached verdict if a fresh one exists (stability + speed + token savings).
+    cached = _verdict_cache.get(req.username.lower())
+    if cached and (time.time() - cached["completed_at"]) < CACHE_TTL_SECONDS:
+        report_id = f"rpt_{uuid.uuid4().hex[:10]}"
+        _reports[report_id] = {
+            "report_id": report_id,
+            "username": req.username,
+            "status": "complete",
+            "current_stage": None,
+            "elapsed_seconds": 0.0,
+            "result": cached["result"],
+            "error": None,
+        }
+        logger.info(f"[{report_id}] served cached verdict for {req.username}")
+        return ReportQueued(
+            report_id=report_id,
+            status="queued",
+            status_url=f"/api/report/{report_id}",
         )
 
     report_id = f"rpt_{uuid.uuid4().hex[:10]}"
