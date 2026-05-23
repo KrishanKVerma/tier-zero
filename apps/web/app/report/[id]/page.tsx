@@ -115,7 +115,9 @@ function LoadingBlock({
         </p>
       </div>
       <p className="mt-4 text-zinc-300">
-        Five agents are auditing the profile. 60&ndash;180 seconds.
+        Five agents are auditing the profile. This can take 1&ndash;3 minutes
+        &mdash; and up to a minute longer if the server is waking from sleep.
+        Hang tight.
       </p>
       <ul className="mt-6 space-y-2 font-mono text-xs">
         {stages.map((s) => {
