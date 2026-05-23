@@ -140,7 +140,7 @@ python -m apps.api.main --username some-github-user
 - [x] FastAPI backend
 - [x] Next.js frontend
 - [x] Safety + legal hardening
-- [ ] Deploy to internet
+- [x] Deploy to internet
 - [ ] Public launch
 
 ---
