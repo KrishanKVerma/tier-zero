@@ -172,12 +172,52 @@ def _langfuse_callbacks() -> list:
         return []
 
 
+def _fallback_state(username: str, reason: str) -> dict:
+    """A valid, minimal result when the pipeline can't complete.
+
+    Returns a real SeniorVerdict so the frontend renders a clean card,
+    never a raw error. Used when GitHub data is too thin or something
+    unexpected breaks mid-pipeline.
+    """
+    return {
+        "username": username,
+        "verdict": SeniorVerdict(
+            score=0,
+            one_line_verdict=(
+                "Not enough public activity to produce a meaningful review."
+            ),
+            tier="red-flag",
+            strengths=[],
+            concerns=[],
+            fixes=[],
+        ),
+        "critic_history": [],
+        "revision_round": 0,
+    }
+
+
 def run(username: str) -> dict:
     """Run the full tier-zero pipeline on a GitHub username.
 
     Returns the final state dict containing all intermediate findings + verdict.
+    Never raises: any pipeline failure degrades to a graceful fallback verdict
+    so the user sees a clean result, not an error screen.
     """
-    graph = build_graph()
-    config = {"callbacks": _langfuse_callbacks(), "metadata": {"username": username}}
-    final_state = graph.invoke({"username": username}, config=config)
-    return final_state
+    try:
+        graph = build_graph()
+        config = {
+            "callbacks": _langfuse_callbacks(),
+            "metadata": {"username": username},
+        }
+        final_state = graph.invoke({"username": username}, config=config)
+        # Guard: pipeline finished but produced no verdict.
+        if "verdict" not in final_state or final_state["verdict"] is None:
+            return _fallback_state(username, "no verdict produced")
+        return final_state
+    except Exception as exc:  # noqa: BLE001 — never crash a user's report
+        import logging
+
+        logging.getLogger("tier_zero").error(
+            f"Pipeline failed for {username}: {type(exc).__name__}: {exc}"
+        )
+        return _fallback_state(username, str(exc))

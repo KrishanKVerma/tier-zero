@@ -1,6 +1,8 @@
 """GitHub data fetching tool layer.
 
 Agents call these functions. All HTTP, auth, and error handling lives here.
+Every public function degrades gracefully on empty/weird/missing data rather
+than crashing — see the edge-case notes inline.
 """
 
 from __future__ import annotations
@@ -86,28 +88,31 @@ def get_profile(username: str) -> ProfileSnapshot:
     """Fetch a user's public profile."""
     try:
         user: NamedUser = _get_client().get_user(username)
+        return ProfileSnapshot(
+            username=user.login,
+            name=user.name,
+            bio=user.bio,
+            company=user.company,
+            location=user.location,
+            blog=user.blog,
+            email=user.email,
+            public_repos=user.public_repos or 0,
+            public_gists=user.public_gists or 0,
+            followers=user.followers or 0,
+            following=user.following or 0,
+            account_created_at=_iso(user.created_at),
+            last_updated_at=_iso(user.updated_at),
+        )
     except GithubException as exc:
         raise _wrap_error(exc, f"Failed to fetch profile for '{username}'") from exc
 
-    return ProfileSnapshot(
-        username=user.login,
-        name=user.name,
-        bio=user.bio,
-        company=user.company,
-        location=user.location,
-        blog=user.blog,
-        email=user.email,
-        public_repos=user.public_repos,
-        public_gists=user.public_gists,
-        followers=user.followers,
-        following=user.following,
-        account_created_at=_iso(user.created_at),
-        last_updated_at=_iso(user.updated_at),
-    )
-
 
 def get_repos(username: str, limit: int = 50) -> list[RepoSnapshot]:
-    """Fetch up to `limit` public repos for a user, sorted by most recently pushed."""
+    """Fetch up to `limit` public repos for a user, sorted by most recently pushed.
+
+    Returns [] if the user has no repos. Skips any single repo that errors
+    rather than failing the whole fetch.
+    """
     try:
         user = _get_client().get_user(username)
         repos = user.get_repos(sort="pushed", direction="desc")
@@ -115,60 +120,87 @@ def get_repos(username: str, limit: int = 50) -> list[RepoSnapshot]:
         raise _wrap_error(exc, f"Failed to fetch repos for '{username}'") from exc
 
     out: list[RepoSnapshot] = []
-    for repo in repos:
-        if len(out) >= limit:
-            break
-        out.append(_to_repo_snapshot(repo))
+    try:
+        for repo in repos:
+            if len(out) >= limit:
+                break
+            try:
+                out.append(_to_repo_snapshot(repo))
+            except GithubException:
+                # One bad repo shouldn't sink the whole list.
+                continue
+    except GithubException:
+        # Lazy pagination can throw mid-iteration on weird accounts; return what we have.
+        pass
     return out
 
 
 def get_repo_details(full_name: str) -> dict[str, Any]:
-    """Fetch deeper details for a single repo: README text, file tree, commit count."""
+    """Fetch deeper details for a single repo: README text, file tree, commit count.
+
+    Degrades gracefully: missing README/tree/commits return empty, never crash.
+    """
     try:
         repo = _get_client().get_repo(full_name)
     except GithubException as exc:
         raise _wrap_error(exc, f"Failed to fetch repo '{full_name}'") from exc
 
-    readme_text = _safe_readme(repo)
-    tree = _shallow_tree(repo)
-    commit_count = _commit_count(repo)
+    try:
+        snapshot = _to_repo_snapshot(repo).to_dict()
+    except GithubException:
+        snapshot = {"full_name": full_name}
 
     return {
-        "snapshot": _to_repo_snapshot(repo).to_dict(),
-        "readme": readme_text,
-        "tree": tree,
-        "commit_count": commit_count,
+        "snapshot": snapshot,
+        "readme": _safe_readme(repo),
+        "tree": _shallow_tree(repo),
+        "commit_count": _commit_count(repo),
     }
 
 
 def get_recent_commits(full_name: str, limit: int = 30) -> list[dict[str, Any]]:
     """Fetch the most recent commits on a repo's default branch.
 
-    Returns a slim shape suitable for pattern analysis — no diffs, no file lists.
+    Returns [] for empty repos (GitHub 409) or any commit-fetch failure.
     """
     try:
         repo = _get_client().get_repo(full_name)
         commits = repo.get_commits()
     except GithubException as exc:
+        # 409 = empty repo (no commits). Treat as "no commits" rather than failing.
+        if exc.status == 409:
+            return []
         raise _wrap_error(exc, f"Failed to fetch commits for '{full_name}'") from exc
 
     out: list[dict[str, Any]] = []
-    for commit in commits:
-        if len(out) >= limit:
-            break
-        message = commit.commit.message or ""
-        out.append(
-            {
-                "sha": commit.sha[:7],
-                "message_first_line": message.split("\n", 1)[0][:200],
-                "message_length": len(message),
-                "author": commit.commit.author.name if commit.commit.author else None,
-                "authored_at": _iso(commit.commit.author.date) if commit.commit.author else "",
-                "additions": commit.stats.additions if commit.stats else 0,
-                "deletions": commit.stats.deletions if commit.stats else 0,
-                "files_changed": commit.files.totalCount if commit.files else 0,
-            }
-        )
+    try:
+        for commit in commits:
+            if len(out) >= limit:
+                break
+            message = commit.commit.message or "" if commit.commit else ""
+            out.append(
+                {
+                    "sha": commit.sha[:7] if commit.sha else "",
+                    "message_first_line": message.split("\n", 1)[0][:200],
+                    "message_length": len(message),
+                    "author": (
+                        commit.commit.author.name
+                        if commit.commit and commit.commit.author
+                        else None
+                    ),
+                    "authored_at": (
+                        _iso(commit.commit.author.date)
+                        if commit.commit and commit.commit.author
+                        else ""
+                    ),
+                    "additions": commit.stats.additions if commit.stats else 0,
+                    "deletions": commit.stats.deletions if commit.stats else 0,
+                    "files_changed": commit.files.totalCount if commit.files else 0,
+                }
+            )
+    except GithubException:
+        # Empty repo / mid-iteration failure — return whatever we gathered.
+        pass
     return out
 
 
@@ -184,21 +216,26 @@ def rate_limit_remaining() -> int:
 
 
 def _to_repo_snapshot(repo: Repository) -> RepoSnapshot:
+    # get_topics() is a network call that can fail; guard it.
+    try:
+        topics = list(repo.get_topics())
+    except GithubException:
+        topics = []
     return RepoSnapshot(
         name=repo.name,
         full_name=repo.full_name,
         description=repo.description,
-        is_fork=repo.fork,
-        is_archived=repo.archived,
+        is_fork=bool(repo.fork),
+        is_archived=bool(repo.archived),
         primary_language=repo.language,
-        stars=repo.stargazers_count,
-        forks=repo.forks_count,
-        open_issues=repo.open_issues_count,
-        size_kb=repo.size,
+        stars=repo.stargazers_count or 0,
+        forks=repo.forks_count or 0,
+        open_issues=repo.open_issues_count or 0,
+        size_kb=repo.size or 0,
         created_at=_iso(repo.created_at),
         last_pushed_at=_iso(repo.pushed_at),
-        default_branch=repo.default_branch,
-        topics=list(repo.get_topics()),
+        default_branch=repo.default_branch or "main",
+        topics=topics,
     )
 
 
