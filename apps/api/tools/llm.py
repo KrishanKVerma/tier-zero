@@ -28,7 +28,7 @@ logger = logging.getLogger("tier_zero.llm")
 # Canonical model. Both providers serve the same Llama 3.3 70B family
 # so a fallback stays as close as possible to the primary's judgment.
 _GROQ_MODEL = "llama-3.3-70b-versatile"
-_OPENROUTER_MODEL = "meta-llama/llama-3.3-70b-instruct"
+_OPENROUTER_MODEL = "google/gemini-2.0-flash-001"
 
 _FALLBACK_EXCEPTIONS = (
     GroqRateLimitError,
