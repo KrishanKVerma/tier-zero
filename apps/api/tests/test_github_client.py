@@ -65,6 +65,11 @@ def test_get_repos_unknown_user_raises() -> None:
         get_repos("this-user-should-not-exist-9q8w7e6r5t")
 
 
+def test_get_repos_limit_zero_returns_empty() -> None:
+    """Limit of 0 must return [] without an IndexError (regression: empty PaginatedList)."""
+    repos = get_repos(STABLE_USER, limit=0)
+    assert repos == []
+
 # ---------- get_repo_details ----------
 
 

@@ -115,7 +115,9 @@ def get_repos(username: str, limit: int = 50) -> list[RepoSnapshot]:
         raise _wrap_error(exc, f"Failed to fetch repos for '{username}'") from exc
 
     out: list[RepoSnapshot] = []
-    for repo in repos[:limit]:
+    for repo in repos:
+        if len(out) >= limit:
+            break
         out.append(_to_repo_snapshot(repo))
     return out
 
@@ -151,7 +153,9 @@ def get_recent_commits(full_name: str, limit: int = 30) -> list[dict[str, Any]]:
         raise _wrap_error(exc, f"Failed to fetch commits for '{full_name}'") from exc
 
     out: list[dict[str, Any]] = []
-    for commit in commits[:limit]:
+    for commit in commits:
+        if len(out) >= limit:
+            break
         message = commit.commit.message or ""
         out.append(
             {
@@ -223,8 +227,12 @@ def _shallow_tree(repo: Repository, max_entries: int = 200) -> list[str]:
             try:
                 children = repo.get_contents(item.path)
                 if isinstance(children, list):
-                    for child in children[:20]:
+                    child_count = 0
+                    for child in children:
+                        if child_count >= 20:
+                            break
                         paths.append(child.path)
+                        child_count += 1
             except GithubException:
                 continue
         if len(paths) >= max_entries:
