@@ -67,7 +67,7 @@ A structured report containing:
 ## How it works
 
 ```
-                ┌──────────────────────────┐
+                ┌───────────────────────────┐
                 │  Orchestrator (LangGraph) │
                 └────────────┬──────────────┘
                              │
